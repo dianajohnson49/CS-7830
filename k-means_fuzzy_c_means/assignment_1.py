@@ -12,13 +12,6 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 
-# Load drug_consumption dataset
-data = pd.read_csv("drug_consumption.data", header=None)
-
-# Pull out all rows of required features (columns)
-# Age (1), Impulsiveness (11), SS (12)
-features = data.iloc[:,[1,11,12]]
-
 def initialize_centroid(data):
     """
     initialize_centroid() : For each feature find out the minimum and maximum values. Then randomly
@@ -104,3 +97,28 @@ def assign_opt_clusters(data, k, centroids, max_iters, epsilon):
         centroids = new_centroids
     
     return centroids, centroid_labels
+
+def plot_3d(data, labels, centroids, title):
+    X = data.values
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    ax.scatter(X[:,0],X[:,1],X[:,2], c=labels)
+    ax.scatter(centroids[:,0],centroids[:,1],centroids[:,2],c='blue',marker='o')
+
+    ax.set_xlabel("Age")
+    ax.set_ylabel("Impulsiveness (BIS-11)")
+    ax.set_zlabel("Sensation Seeking (ImpSS)")
+
+    ax.set_title(title)
+
+    plt.show()
+
+
+# Load drug_consumption dataset
+data = pd.read_csv("drug_consumption.data", header=None)
+
+# Pull out all rows of required features (columns)
+# Age (1), Impulsiveness (11), SS (12)
+features = data.iloc[:,[1,11,12]]
