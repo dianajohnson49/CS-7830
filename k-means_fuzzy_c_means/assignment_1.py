@@ -138,8 +138,6 @@ def main():
     for _ in range(k):
         initial_centroids.append(initialize_centroid(features))
     
-    print(initial_centroids)
-    
     centroids, labels = assign_opt_clusters(features, k, initial_centroids, max_iters=200, epsilon=1e-6)
 
     # plot results
@@ -149,6 +147,16 @@ def main():
 
     # PART B
     #=============================================================
+    
+    for i in range(1,9,1):
+        initial_centroids = []
+        for _ in range(i):
+            initial_centroids.append(initialize_centroid(features))
+        
+        centroids, labels = assign_opt_clusters(features, i, initial_centroids, max_iters=200, epsilon=1e-6)
+
+        # plot results
+        plot_3d(features, labels, centroids, ("K-means: k=" + str(i)))
 
 
 
