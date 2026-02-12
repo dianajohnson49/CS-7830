@@ -44,7 +44,7 @@ def assign_opt_clusters(data, k, centroids, max_iters, epsilon):
     assign_opt_clusters() : Calculates the best centroids for a given set of data and given 
                         k value
 
-        Parameters:
+    Parameters:
         data: pd dataframe, dataset of features for analysis
         k: int, number of clusters
         centroids: list, centers for clusters
@@ -99,14 +99,30 @@ def assign_opt_clusters(data, k, centroids, max_iters, epsilon):
     return centroids, centroid_labels
 
 def plot_3d(data, labels, centroids, title):
+    """
+    plot_3d() : Plots clusters and their centers on a 3D plot
+
+    Parameters:
+        data: pd dataframe, dataset of features for analysis
+        labels: list, cluster labels
+        centroids: list, centers for clusters
+        title: string, name for plot
+
+    Returns:
+        None
+    """
     X = data.values
 
+    # setup figure and axis
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
+    # add data to plot
     ax.scatter(X[:,0],X[:,1],X[:,2], c=labels)
+    # centroids are blue circles
     ax.scatter(centroids[:,0],centroids[:,1],centroids[:,2],c='blue',marker='o')
 
+    # add labels
     ax.set_xlabel("Age")
     ax.set_ylabel("Impulsiveness (BIS-11)")
     ax.set_zlabel("Sensation Seeking (ImpSS)")
@@ -115,7 +131,17 @@ def plot_3d(data, labels, centroids, title):
 
     plt.show()
 
+
 def main():
+    """
+    main() : Main driver method
+
+    Parameters:
+        None
+
+    Returns:
+        None
+    """
     # Load drug_consumption dataset
     data = pd.read_csv("drug_consumption.data", header=None)
 
@@ -148,6 +174,7 @@ def main():
     # PART B
     #=============================================================
     
+    # try k as values 1 to 8
     for i in range(1,9,1):
         initial_centroids = []
         for _ in range(i):
