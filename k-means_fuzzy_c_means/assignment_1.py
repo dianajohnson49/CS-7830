@@ -115,10 +115,47 @@ def plot_3d(data, labels, centroids, title):
 
     plt.show()
 
+def main():
+    # Load drug_consumption dataset
+    data = pd.read_csv("drug_consumption.data", header=None)
 
-# Load drug_consumption dataset
-data = pd.read_csv("drug_consumption.data", header=None)
+    """
+    Assignment Part 1
+    """
 
-# Pull out all rows of required features (columns)
-# Age (1), Impulsiveness (11), SS (12)
-features = data.iloc[:,[1,11,12]]
+    # PART A
+    #=============================================================
+    
+    # Pull out all rows of required features (columns)
+    # Age (1), Impulsiveness (11), SS (12)
+    features = data.iloc[:,[1,11,12]]
+    
+    # 2 clusters
+    k = 2
+
+    # Initialize centers
+    initial_centroids = []
+    for _ in range(k):
+        initial_centroids.append(initialize_centroid(features))
+    
+    print(initial_centroids)
+    
+    centroids, labels = assign_opt_clusters(features, k, initial_centroids, max_iters=200, epsilon=1e-6)
+
+    # plot results
+    plot_3d(features, labels, centroids, "K-means: k=2")
+
+
+
+    # PART B
+    #=============================================================
+
+
+
+    """
+    Assignment Part 2
+    """
+
+
+
+main()
