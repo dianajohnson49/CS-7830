@@ -169,6 +169,7 @@ def davies_bouldin(data, k, labels, centroids):
         DB index : float, lower values indicate better clustering
     """    
 
+    # np array from pd df
     X = data.values
     labels = np.array(labels)
     centroids = np.array(centroids)
@@ -184,21 +185,24 @@ def davies_bouldin(data, k, labels, centroids):
         else:
             S[i] = 0.0 
         
-    # compute R: (R = Si + Sj) / dist between centroids
-    R = np.zeros((k,k))
+    # compute R = Si + Sj) / dist between centroids
+    R = np.zeros(k)
     for i in range(k):
+        max_r_ij = 0
         for j in range(k):
             # don't compare the same clusters
             if i != j:
                 dist_ij =  np.linalg.norm(centroids[i] - centroids[j])
-                if dist_ij != 0:
-                    R[i,j] = (S[i] + S[j]) / dist_ij
-                # can't divide by 0
-                else:
-                    R[i,j] = 0.0
+                if dist_ij > 0:
+                    r_ij = (S[i] + S[j]) / dist_ij
+                    if r_ij > max_r_ij:
+                        max_r_ij = r_ij
+            
+            R[i] = max_r_ij
+                    
     
     # compute mean of max of R for each cluster
-    DB_index = np.mean(np.max(R, axis=1))
+    DB_index = np.mean(R)
     
     return DB_index
 
@@ -255,7 +259,7 @@ def main():
         db_index = davies_bouldin(features,k, labels, centroids)
         print(f"DB Index = {db_index} for k = {k}")
         # plot results
-        #plot_3d(features, labels, centroids, ("Part 1B: k=" + str(k)))
+        plot_3d(features, labels, centroids, ("Part 1B: k=" + str(k)))
 
 
 
@@ -281,7 +285,23 @@ def main():
     db_index = davies_bouldin(features,k, labels, centroids)
     print(f"DB Index = {db_index} for k = {k}")
 
-    # plot results
-    plot_3d(features, labels, centroids, "Part 2A: k=4")
+    # PART B
+    # get new feature: Conscientiousness 
+    features = data.iloc[:,[1,6,10,11,12]]
+    features = normalize_data(features)
+    
+    # 4 clusters was best from 1c
+    k = 4
+
+    # Initialize centers
+    initial_centroids = []
+    for _ in range(k):
+        initial_centroids.append(initialize_centroid(features))
+    
+    centroids, labels = assign_opt_clusters(features, k, initial_centroids, max_iters=200, epsilon=1e-6)
+
+    db_index = davies_bouldin(features,k, labels, centroids)
+    print(f"DB Index = {db_index} for k = {k}")
+
 
 main()
