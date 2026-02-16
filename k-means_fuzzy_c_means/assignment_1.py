@@ -155,6 +155,52 @@ def plot_3d(data, labels, centroids, title):
 
     plt.show()
 
+def davies_bouldin(data, k, labels, centroids):
+    """
+    Computes the Davies-Bouldin index
+
+    Parameters:
+        data : pd.DataFrame of shape (n_samples, n_features)
+        k : number of clusters
+        labels : list, cluster labels
+        centroids : list, centers for clusters
+
+    Returns:
+        DB index : float, lower values indicate better clustering
+    """    
+
+    X = data.values
+    labels = np.array(labels)
+    centroids = np.array(centroids)
+
+    # compute Si: average dist of points in clusters to assigned centroid
+    S = np.zeros(k)
+    for i in range(k):
+        cluster_pts = X[labels == i]
+        
+        if len(cluster_pts) > 0:
+            S[i] = np.mean(np.linalg.norm(cluster_pts - centroids[i], axis=1))  # axis=1 for row comparison
+        # empty cluster
+        else:
+            S[i] = 0.0 
+        
+    # compute R: (R = Si + Sj) / dist between centroids
+    R = np.zeros((k,k))
+    for i in range(k):
+        for j in range(k):
+            # don't compare the same clusters
+            if i != j:
+                dist_ij =  np.linalg.norm(centroids[i] - centroids[j])
+                if dist_ij != 0:
+                    R[i,j] = (S[i] + S[j]) / dist_ij
+                # can't divide by 0
+                else:
+                    R[i,j] = 0.0
+    
+    # compute mean of max of R for each cluster
+    DB_index = np.mean(np.max(R, axis=1))
+    
+    return DB_index
 
 def main():
     """
@@ -191,7 +237,7 @@ def main():
     centroids, labels = assign_opt_clusters(features, k, initial_centroids, max_iters=200, epsilon=1e-6)
 
     # plot results
-    plot_3d(features, labels, centroids, "K-means: k=2")
+    plot_3d(features, labels, centroids, "Part 1A: k=2")
 
 
 
@@ -199,15 +245,17 @@ def main():
     #=============================================================
     
     # try k as values 1 to 8
-    for i in range(1,9,1):
+    for k in range(2,9,1):
         initial_centroids = []
-        for _ in range(i):
+        for _ in range(k):
             initial_centroids.append(initialize_centroid(features))
         
-        centroids, labels = assign_opt_clusters(features, i, initial_centroids, max_iters=200, epsilon=1e-6)
+        centroids, labels = assign_opt_clusters(features, k, initial_centroids, max_iters=200, epsilon=1e-6)
 
+        db_index = davies_bouldin(features,k, labels, centroids)
+        print(f"DB Index = {db_index} for k = {k}")
         # plot results
-        plot_3d(features, labels, centroids, ("K-means: k=" + str(i)))
+        #plot_3d(features, labels, centroids, ("Part 1B: k=" + str(k)))
 
 
 
@@ -215,6 +263,25 @@ def main():
     Assignment Part 2
     """
 
+    # PART A
+    # get new feature: Neuroticism 
+    features = data.iloc[:,[1,6,11,12]]
+    features = normalize_data(features)
+    
+    # 4 clusters was best from 1c
+    k = 4
 
+    # Initialize centers
+    initial_centroids = []
+    for _ in range(k):
+        initial_centroids.append(initialize_centroid(features))
+    
+    centroids, labels = assign_opt_clusters(features, k, initial_centroids, max_iters=200, epsilon=1e-6)
+
+    db_index = davies_bouldin(features,k, labels, centroids)
+    print(f"DB Index = {db_index} for k = {k}")
+
+    # plot results
+    plot_3d(features, labels, centroids, "Part 2A: k=4")
 
 main()
