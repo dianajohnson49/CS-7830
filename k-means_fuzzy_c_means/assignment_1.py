@@ -9,8 +9,32 @@ Diana Johnson
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
+def normalize_data(data):
+    """
+    normalize_data() : Scales each feature column to 0-1.
+
+    Parameters:
+        data : pd.DataFrame, features
+
+    Returns:
+        normalized_data : pd.DataFrame, normalized features
+    """
+
+    norm_data = data.copy()
+
+    # for each feature, normalize the data
+    for feature in norm_data.columns:
+        # find min and max of current feature
+        f_min = norm_data[feature].min()
+        f_max = norm_data[feature].max()
+
+        if f_max - f_min != 0:
+            norm_data[feature] = (norm_data[feature] - f_min) / (f_max - f_min)
+        else:
+            norm_data[feature] = 0.0
+
+    return norm_data
 
 def initialize_centroid(data):
     """
@@ -144,7 +168,6 @@ def main():
     """
     # Load drug_consumption dataset
     data = pd.read_csv("drug_consumption.data", header=None)
-
     """
     Assignment Part 1
     """
@@ -155,6 +178,7 @@ def main():
     # Pull out all rows of required features (columns)
     # Age (1), Impulsiveness (11), SS (12)
     features = data.iloc[:,[1,11,12]]
+    features = normalize_data(features)
     
     # 2 clusters
     k = 2
@@ -171,7 +195,7 @@ def main():
 
 
 
-    # PART B
+    # PART B & PART C
     #=============================================================
     
     # try k as values 1 to 8
