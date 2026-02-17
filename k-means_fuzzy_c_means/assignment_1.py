@@ -177,24 +177,31 @@ def davies_bouldin(data, k, labels, centroids):
     # compute Si: average dist of points in clusters to assigned centroid
     S = np.zeros(k)
     for i in range(k):
+        # get points assigned to ith cluster
         cluster_pts = X[labels == i]
         
         if len(cluster_pts) > 0:
+            # avg euclidean dist for each row of each centroid
             S[i] = np.mean(np.linalg.norm(cluster_pts - centroids[i], axis=1))  # axis=1 for row comparison
         # empty cluster
         else:
             S[i] = 0.0 
         
-    # compute R = Si + Sj) / dist between centroids
+    # compute R = (Si + Sj) / dist between centroids
+    # R is ratio of sum of centroids avg distances (scatter) to dist between centroids
+    # (..dist between internal points compared to each other..?S)
     R = np.zeros(k)
     for i in range(k):
         max_r_ij = 0
         for j in range(k):
             # don't compare the same clusters
             if i != j:
+                # euclidean dist between diff centroids
                 dist_ij =  np.linalg.norm(centroids[i] - centroids[j])
                 if dist_ij > 0:
                     r_ij = (S[i] + S[j]) / dist_ij
+                    # large R_ij means high intercluster spread or clusters are too close together
+                    # store cluster i is most similar to
                     if r_ij > max_r_ij:
                         max_r_ij = r_ij
             
@@ -202,6 +209,7 @@ def davies_bouldin(data, k, labels, centroids):
                     
     
     # compute mean of max of R for each cluster
+    # bigger is worse
     DB_index = np.mean(R)
     
     return DB_index
