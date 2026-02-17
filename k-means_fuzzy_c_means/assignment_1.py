@@ -63,7 +63,7 @@ def initialize_centroid(data):
     # return centroid
     return centroid
 
-def assign_opt_clusters(data, k, centroids, max_iters, epsilon):
+def assign_opt_clusters(data, k, centroids, max_iters=200, epsilon=1e-6):
     """
     assign_opt_clusters() : Calculates the best centroids for a given set of data and given 
                         k value
@@ -73,7 +73,7 @@ def assign_opt_clusters(data, k, centroids, max_iters, epsilon):
         k: int, number of clusters
         centroids: list, centers for clusters
         max_iters: maximum iterations for finding opt centers
-        tolerance: target error/difference between iterations
+        epsilon: target error/difference between iterations
 
     Returns:
         centroids: optimal centers per cluster
@@ -154,6 +154,79 @@ def plot_3d(data, labels, centroids, title):
     ax.set_title(title)
 
     plt.show()
+
+def fuzzy_c_means(data, c, m=2, max_iters=200, epsilon=1e-6):
+    """
+    fuzzy_c_means() : Implements Fuzzy C-Means clustering
+    
+    Parameters:
+        data : pd.DataFrame, dataset of features
+        c : int, number of clusters
+        m : float, fuzziness parameter default 2
+        max_iters: maximum iterations for finding opt centers
+        epsilon: target error/difference between iterations
+        
+    Returns:
+        centroids : weighted avg of points
+        U : membership matrix
+    """
+    X = data.values
+    n_samples, n_features = X.shape
+
+    # initialize random membership matrix
+    U = np.random.rand(n_samples, c)
+    for i in range(U.shape[0]):
+        row_sum = 0.0
+        # compute the sum of memberships in each row
+        for j in range(U.shape[1]):
+            row_sum += np.sum(U[i,j])
+        
+        for j in range(U.shape[1]):
+            # normalize to sum to 1
+            U[i, j] = U[i, j] / row_sum
+    
+    iter = 0
+    while iter < max_iters:
+
+        U_old = U.copy()
+        centroids = []
+        for i in range(c):
+
+            # denominator of centroid formula
+            weight_sum = 0.0
+            for j in range(n_samples):
+                denom_weight_sum += (U[i, c] ** m)
+
+            # numerator of centroid formula - compute each feature dimension for the centroid
+            center = []
+            for feature in range(n_features):
+                # weighted sum of all points
+                for n in range(n_samples):
+                    # value of feature for sample n
+                    X_fn = X[n, feature]
+                    # mult by datapoint membership value of cluster i
+                    combined_denom = X_fn * (U[n, i] ** m)
+
+                    # compute final weight and add to weighted sum
+                    numer_weighted_sum += combined_denom
+                
+                # add this dimension to current cluster center
+                if denom_weight_sum > 0:
+                    dimension_f = numer_weighted_sum / denom_weight_sum
+                else:
+                    dimension_f = 0.0
+                
+                center.append(dimension_f)
+            
+            centroids.append(center)
+        
+        centroids = np.array(centroids)
+
+        # update weights
+        
+
+        iter += 1
+
 
 def davies_bouldin(data, k, labels, centroids):
     """
@@ -246,10 +319,10 @@ def main():
     for _ in range(k):
         initial_centroids.append(initialize_centroid(features))
     
-    centroids, labels = assign_opt_clusters(features, k, initial_centroids, max_iters=200, epsilon=1e-6)
+    centroids, labels = assign_opt_clusters(features, k, initial_centroids)
 
     # plot results
-    plot_3d(features, labels, centroids, "Part 1A: k=2")
+    #plot_3d(features, labels, centroids, "Part 1A: k=2")
 
 
 
@@ -262,12 +335,12 @@ def main():
         for _ in range(k):
             initial_centroids.append(initialize_centroid(features))
         
-        centroids, labels = assign_opt_clusters(features, k, initial_centroids, max_iters=200, epsilon=1e-6)
+        centroids, labels = assign_opt_clusters(features, k, initial_centroids)
 
-        db_index = davies_bouldin(features,k, labels, centroids)
-        print(f"DB Index = {db_index} for k = {k}")
+        #db_index = davies_bouldin(features,k, labels, centroids)
+        #print(f"DB Index = {db_index} for k = {k}")
         # plot results
-        plot_3d(features, labels, centroids, ("Part 1B: k=" + str(k)))
+        #plot_3d(features, labels, centroids, ("Part 1B: k=" + str(k)))
 
 
 
@@ -276,6 +349,8 @@ def main():
     """
 
     # PART A
+    #=============================================================
+
     # get new feature: Neuroticism 
     features = data.iloc[:,[1,6,11,12]]
     features = normalize_data(features)
@@ -288,14 +363,17 @@ def main():
     for _ in range(k):
         initial_centroids.append(initialize_centroid(features))
     
-    centroids, labels = assign_opt_clusters(features, k, initial_centroids, max_iters=200, epsilon=1e-6)
+    centroids, labels = assign_opt_clusters(features, k, initial_centroids)
 
-    db_index = davies_bouldin(features,k, labels, centroids)
-    print(f"DB Index = {db_index} for k = {k}")
+    #db_index = davies_bouldin(features,k, labels, centroids)
+    #print(f"DB Index = {db_index} for k = {k}")
 
     # PART B
+    #=============================================================
+
     # get new feature: Conscientiousness 
-    features = data.iloc[:,[1,6,10,11,12]]
+
+    features = data.iloc[:,[1, 10,11,12]]
     features = normalize_data(features)
     
     # 4 clusters was best from 1c
@@ -306,10 +384,31 @@ def main():
     for _ in range(k):
         initial_centroids.append(initialize_centroid(features))
     
-    centroids, labels = assign_opt_clusters(features, k, initial_centroids, max_iters=200, epsilon=1e-6)
+    centroids, labels = assign_opt_clusters(features, k, initial_centroids)
 
     db_index = davies_bouldin(features,k, labels, centroids)
     print(f"DB Index = {db_index} for k = {k}")
+
+    """
+    Assignment Part 3
+    """
+
+    # PART A
+    #=============================================================
+    features = data.iloc[:,[1,11,12]]
+    features = normalize_data(features)
+    
+    # 4 clusters
+    c = 4
+
+    # Initialize centers
+    initial_centroids = []
+    for _ in range(c):
+        initial_centroids.append(initialize_centroid(features))
+
+    
+    
+
 
 
 main()
