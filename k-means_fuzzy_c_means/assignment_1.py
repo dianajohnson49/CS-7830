@@ -188,27 +188,30 @@ def fuzzy_c_means(data, c, m=2, max_iters=200, epsilon=1e-6):
     iter = 0
     while iter < max_iters:
 
-        U_old = U.copy()
+        U_prev = U.copy()
+
+        # CALCULATE CENTROIDS
         centroids = []
         for i in range(c):
 
             # denominator of centroid formula
-            weight_sum = 0.0
+            denom_weight_sum = 0.0
             for j in range(n_samples):
-                denom_weight_sum += (U[i, c] ** m)
+                denom_weight_sum += (U[j,i] ** m)
 
             # numerator of centroid formula - compute each feature dimension for the centroid
             center = []
             for feature in range(n_features):
                 # weighted sum of all points
+                numer_weighted_sum = 0.0
                 for n in range(n_samples):
                     # value of feature for sample n
                     X_fn = X[n, feature]
                     # mult by datapoint membership value of cluster i
-                    combined_denom = X_fn * (U[n, i] ** m)
+                    combined_numer = X_fn * (U[n, i] ** m)
 
                     # compute final weight and add to weighted sum
-                    numer_weighted_sum += combined_denom
+                    numer_weighted_sum += combined_numer
                 
                 # add this dimension to current cluster center
                 if denom_weight_sum > 0:
@@ -222,10 +225,36 @@ def fuzzy_c_means(data, c, m=2, max_iters=200, epsilon=1e-6):
         
         centroids = np.array(centroids)
 
-        # update weights
+        # UPDATE WEIGHTS
+        # var for storing denominator of membership formula for each point
+        memb_form_denom = np.zeros(n_samples)
+        for i in range(c):
+            for n in range(n_samples):
+                dist = np.linalg.norm(X[n] - centroids[i])
+                # in case the dist is 0 for some reason
+                if dist == 0:
+                    dist = 1e-10
+
+                denom_n = ((1/dist) ** (2/(m - 1)))
+                memb_form_denom[n] += denom_n
+
+        # find numerator and update membership values
+        for i in range(c):
+            for n in range(n_samples):
+                dist = np.linalg.norm(X[n] - centroids[i])
+                if dist == 0:
+                    dist = 1e-10
+                
+                memb_form_numer = (1/dist) ** (2/(m - 1))
+                U[n, i] = memb_form_numer /  memb_form_denom[n]
         
+        # CHECK CONVERGENCE
+        if np.linalg.norm(U - U_prev) < epsilon:
+            break
 
         iter += 1
+    
+    return centroids, U
 
 
 def davies_bouldin(data, k, labels, centroids):
@@ -386,8 +415,8 @@ def main():
     
     centroids, labels = assign_opt_clusters(features, k, initial_centroids)
 
-    db_index = davies_bouldin(features,k, labels, centroids)
-    print(f"DB Index = {db_index} for k = {k}")
+    #db_index = davies_bouldin(features,k, labels, centroids)
+    #print(f"DB Index = {db_index} for k = {k}")
 
     """
     Assignment Part 3
@@ -406,7 +435,11 @@ def main():
     for _ in range(c):
         initial_centroids.append(initialize_centroid(features))
 
-    
+    fcm_centroids, U = fuzzy_c_means(features, c)
+    fcm_labels = np.argmax(U, axis=1)
+
+    db_fcm = davies_bouldin(features, c, fcm_labels, fcm_centroids)
+    print(f"DB Index = {db_fcm} for c = {c}")
     
 
 
