@@ -256,10 +256,23 @@ def fuzzy_c_means(data, c, m=2, max_iters=200, epsilon=1e-6):
     
     return centroids, U
 
+def harden_membership(U):
+    """
+    harden_membership(): hardens membership values for samples
+
+    Parameters:
+        U : membership matrix
+
+    Returns:
+        hard_assignment : array of cluster labels
+    """ 
+    hard_assignment = np.argmax(U,axis=1)
+
+    return hard_assignment
 
 def davies_bouldin(data, k, labels, centroids):
     """
-    Computes the Davies-Bouldin index
+    davies_bouldin() : Computes the Davies-Bouldin index
 
     Parameters:
         data : pd.DataFrame of shape (n_samples, n_features)
@@ -349,9 +362,8 @@ def main():
         initial_centroids.append(initialize_centroid(features))
     
     centroids, labels = assign_opt_clusters(features, k, initial_centroids)
-
     # plot results
-    #plot_3d(features, labels, centroids, "Part 1A: k=2")
+    plot_3d(features, labels, centroids, "Part 1A: k=2")
 
 
 
@@ -365,11 +377,13 @@ def main():
             initial_centroids.append(initialize_centroid(features))
         
         centroids, labels = assign_opt_clusters(features, k, initial_centroids)
-
-        #db_index = davies_bouldin(features,k, labels, centroids)
-        #print(f"DB Index = {db_index} for k = {k}")
         # plot results
-        #plot_3d(features, labels, centroids, ("Part 1B: k=" + str(k)))
+        plot_3d(features, labels, centroids, ("Part 1B: k=" + str(k)))
+        
+        # calculate DB index
+        db_index = davies_bouldin(features,k, labels, centroids)
+        print(f"Part 1C: DB Index = {db_index} for k = {k}")
+        
 
 
 
@@ -394,8 +408,8 @@ def main():
     
     centroids, labels = assign_opt_clusters(features, k, initial_centroids)
 
-    #db_index = davies_bouldin(features,k, labels, centroids)
-    #print(f"DB Index = {db_index} for k = {k}")
+    db_index = davies_bouldin(features,k, labels, centroids)
+    print(f"Part 2A: DB Index = {db_index} for k = {k}")
 
     # PART B
     #=============================================================
@@ -415,8 +429,8 @@ def main():
     
     centroids, labels = assign_opt_clusters(features, k, initial_centroids)
 
-    #db_index = davies_bouldin(features,k, labels, centroids)
-    #print(f"DB Index = {db_index} for k = {k}")
+    db_index = davies_bouldin(features,k, labels, centroids)
+    print(f"Part 2B: DB Index = {db_index} for k = {k}")
 
     """
     Assignment Part 3
@@ -438,9 +452,35 @@ def main():
     fcm_centroids, U = fuzzy_c_means(features, c)
     fcm_labels = np.argmax(U, axis=1)
 
-    db_fcm = davies_bouldin(features, c, fcm_labels, fcm_centroids)
-    print(f"DB Index = {db_fcm} for c = {c}")
+    k_centroids, k_labels = assign_opt_clusters(features, c, initial_centroids)
+    db_kmeans = davies_bouldin(features, c, k_labels, k_centroids)
     
+    plot_3d(features, fcm_labels, fcm_centroids, ("Part 3A: FCM c=" + str(c)))
+    plot_3d(features, k_labels, k_centroids, ("Part 3A: K-Mean c=" + str(c)))
+
+    # PART B
+    #=============================================================
+    # harden the cluster assignments
+    hard_labels = harden_membership(U)
+    db_fcm = davies_bouldin(features, c, hard_labels, fcm_centroids)
+
+    print(f"db_kmeans: {db_kmeans}\ndb_fcm: {db_fcm}")
+
+    # PART C
+    #=============================================================
+    # used k-means because it proved best in last part
+    # adding extraversion usage to features
+    features = data.iloc[:,[1,7,11,12]]
+    features = normalize_data(features)
+    
+    # Initialize centers
+    initial_centroids = []
+    for _ in range(c):
+        initial_centroids.append(initialize_centroid(features))
+
+    k_centroids, k_labels = assign_opt_clusters(features, c, initial_centroids)
+    db_kmeans = davies_bouldin(features, c, k_labels, k_centroids)
+    print(f"Part 3C: DB Index using K-means with additional feature: {db_kmeans}")
 
 
 
