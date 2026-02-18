@@ -29,7 +29,7 @@ def normalize_data(data):
         f_min = norm_data[feature].min()
         f_max = norm_data[feature].max()
 
-        if f_max - f_min != 0:
+        if f_max - f_min > 0:
             norm_data[feature] = (norm_data[feature] - f_min) / (f_max - f_min)
         else:
             norm_data[feature] = 0.0
@@ -63,7 +63,7 @@ def initialize_centroid(data):
     # return centroid
     return centroid
 
-def assign_opt_clusters(data, k, centroids, max_iters=200, epsilon=1e-6):
+def assign_opt_clusters(data, k, opt_centroids, max_iters=200, epsilon=1e-6):
     """
     assign_opt_clusters() : Calculates the best centroids for a given set of data and given 
                         k value
@@ -81,7 +81,7 @@ def assign_opt_clusters(data, k, centroids, max_iters=200, epsilon=1e-6):
     """
 
     X = data.values
-    centroids = np.array(centroids)
+    centroids = np.array(opt_centroids)
 
     # assign each point to a cluster
     for _ in range(max_iters):
@@ -385,8 +385,6 @@ def main():
         print(f"Part 1C: DB Index = {db_index} for k = {k}")
         
 
-
-
     """
     Assignment Part 2
     """
@@ -415,7 +413,6 @@ def main():
     #=============================================================
 
     # get new feature: Conscientiousness 
-
     features = data.iloc[:,[1, 10,11,12]]
     features = normalize_data(features)
     
@@ -431,6 +428,7 @@ def main():
 
     db_index = davies_bouldin(features,k, labels, centroids)
     print(f"Part 2B: DB Index = {db_index} for k = {k}")
+
 
     """
     Assignment Part 3
@@ -449,12 +447,15 @@ def main():
     for _ in range(c):
         initial_centroids.append(initialize_centroid(features))
 
+    # do fCM clustering
     fcm_centroids, U = fuzzy_c_means(features, c)
     fcm_labels = np.argmax(U, axis=1)
 
+    # apply k-mean clustering to same initial centroids
     k_centroids, k_labels = assign_opt_clusters(features, c, initial_centroids)
     db_kmeans = davies_bouldin(features, c, k_labels, k_centroids)
     
+    # plot both to compare
     plot_3d(features, fcm_labels, fcm_centroids, ("Part 3A: FCM c=" + str(c)))
     plot_3d(features, k_labels, k_centroids, ("Part 3A: K-Mean c=" + str(c)))
 
@@ -464,6 +465,7 @@ def main():
     hard_labels = harden_membership(U)
     db_fcm = davies_bouldin(features, c, hard_labels, fcm_centroids)
 
+    # compare hard FCM values to k mean
     print(f"db_kmeans: {db_kmeans}\ndb_fcm: {db_fcm}")
 
     # PART C
